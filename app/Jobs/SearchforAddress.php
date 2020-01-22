@@ -13,6 +13,7 @@ use Illuminate\Queue\SerializesModels;
 class SearchforAddress implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
     public $Address;
     public function __construct()
     {
@@ -27,6 +28,7 @@ class SearchforAddress implements ShouldQueue
             $this->check($key->id);
         }
     }
+
     public function check($id)
     {
         $address = Address::find($id);
@@ -49,6 +51,7 @@ class SearchforAddress implements ShouldQueue
         $address->save();
 
     }
+
     public function CallApi($address)
     {
         $curl = curl_init();
@@ -72,6 +75,7 @@ class SearchforAddress implements ShouldQueue
         return json_decode($response);
 
     }
+
     public function ValidateArray($address)
     {
         $first = str_replace("،", " ", $address);
@@ -85,4 +89,5 @@ class SearchforAddress implements ShouldQueue
         $array = explode(" ", $Final);
         return $array;
     }
+
 }

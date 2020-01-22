@@ -11,7 +11,6 @@
 |
 */
 
-use Illuminate\Support\Facades\Auth;
 
 Route::get('/', 'RouteController@Index');
 Route::group(['middleware' => 'auth'], function () {
