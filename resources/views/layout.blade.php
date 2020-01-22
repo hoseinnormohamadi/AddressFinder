@@ -59,75 +59,41 @@
                 <!-- Begin Navbar Menu -->
                 <ul class="nav-menu list-unstyled d-flex flex-md-row align-items-md-center pull-right">
                     <!-- Begin Notifications -->
-                    <li class="nav-item dropdown"><a id="notifications" rel="nofollow" data-target="#" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link"><i class="la la-bell animated infinite swing"></i><span class="badge-pulse"></span></a>
-                        <ul aria-labelledby="notifications" class="dropdown-menu notification">
-                            <li>
-                                <div class="notifications-header">
-                                    <div class="title">اعلان ها (4)</div>
-                                    <div class="notifications-overlay"></div>
-                                    <img src="/assets/img/notifications/01.jpg" alt="..." class="img-fluid">
-                                </div>
-                            </li>
-                            <li>
-                                <a href="#">
-                                    <div class="message-icon">
-                                        <i class="la la-user"></i>
+                    @if($notification->isEmpty())
+                        <li class="nav-item dropdown"><a id="notifications" rel="nofollow" data-target="#" href="#"
+                                                         data-toggle="dropdown" aria-haspopup="true"
+                                                         aria-expanded="false" class="nav-link"><i
+                                    class="la la-bell animated infinite swing"></i><span class="badge-pulse"></span></a>
+                            <ul aria-labelledby="notifications" class="dropdown-menu notification">
+                                <li>
+                                    <div class="notifications-header">
+                                        <div class="title">اعلان ها</div>
+                                        <div class="notifications-overlay"></div>
+                                        <img src="/assets/img/notifications/01.jpg" alt="..." class="img-fluid">
                                     </div>
-                                    <div class="message-body">
-                                        <div class="message-body-heading">
-                                            ثبت نام کاربر جدید
+                                </li>
+                                <li>
+                                    <a href="/Adresses">
+                                        <div class="message-icon">
+                                            <i class="la la-map-marker"></i>
                                         </div>
-                                        <span class="date">2 ساعت قبل</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#">
-                                    <div class="message-icon">
-                                        <i class="la la-calendar-check-o"></i>
-                                    </div>
-                                    <div class="message-body">
-                                        <div class="message-body-heading">
-                                            رویداد جدید
+                                        <div class="message-body">
+                                            <div class="message-body-heading">
+                                                جست و جوی آدرس به اتمام رسید.
+                                            </div>
+                                            <span class="date">هم اکنون</span>
                                         </div>
-                                        <span class="date">7 ساعت قبل</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#">
-                                    <div class="message-icon">
-                                        <i class="la la-history"></i>
-                                    </div>
-                                    <div class="message-body">
-                                        <div class="message-body-heading">
-                                            سرور دوباره راه اندازی شد
-                                        </div>
-                                        <span class="date">7 ساعت قبل</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#">
-                                    <div class="message-icon">
-                                        <i class="la la-twitter"></i>
-                                    </div>
-                                    <div class="message-body">
-                                        <div class="message-body-heading">
-                                            شما 3 فالوور جدید دارید
-                                        </div>
-                                        <span class="date">10 ساعت قبل</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a rel="nofollow" href="#" class="dropdown-item all-notifications text-center">مشاهده همه اعلانها</a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- End Notifications -->
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                @endif
+                <!-- End Notifications -->
                     <!-- User -->
-                    <li class="nav-item dropdown"><a id="user" rel="nofollow" data-target="#" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link"><img src="/assets/img/avatar/avatar-01.jpg" alt="..." class="avatar rounded-circle"></a>
+                    <li class="nav-item dropdown"><a id="user" rel="nofollow" data-target="#" href="#"
+                                                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                                     class="nav-link"><img src="/assets/img/avatar/avatar-01.jpg"
+                                                                           alt="..." class="avatar rounded-circle"></a>
                         <ul aria-labelledby="user" class="user-size dropdown-menu">
                             <li class="welcome">
                                 <a href="#" class="edit-profil"><i class="la la-gear"></i></a>
@@ -154,7 +120,9 @@
                                     پرسش و پاسخ
                                 </a>
                             </li>
-                            <li><a rel="nofollow" href="{{ route('logout') }}"  onclick="event.preventDefault();  document.getElementById('logout-form').submit();" class="dropdown-item logout text-center"><i class="ti-power-off"></i></a></li>
+                            <li><a rel="nofollow" href="{{ route('logout') }}"
+                                   onclick="event.preventDefault();  document.getElementById('logout-form').submit();"
+                                   class="dropdown-item logout text-center"><i class="ti-power-off"></i></a></li>
                         </ul>
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                             @csrf
