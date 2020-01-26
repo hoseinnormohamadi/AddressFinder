@@ -29,31 +29,24 @@ class AddressController extends Controller
     public function check($id)
     {
         $address = Address::find($id);
-        $array = $this->ValidateArray($address->Address);
-        $FinalAddress = implode(" ", $array);
-        $response = $this->CallApi($FinalAddress);
-        while ($response == null) {
-            array_splice($array, -1);
-            $FinalAddress = implode(" ", $array);
+        $Address = $address->Address;
+        if (strpos($Address, 'خیابان') || strpos($Address, 'خ ') || strpos($Address, "کوچه") || strpos($Address, "ک ") || strpos($Address, 'پلاک ') || strpos($Address , "واحد")|| strpos($Address , "ساختمان") !== false) {
+            $FinalAddress = $this->ValidateArray($Address);
+            echo "آدرس جست و جو شده :‌ ".$FinalAddress;
+            echo "<br/><br/><br/><br/><br/>";
             $response = $this->CallApi($FinalAddress);
+            $address->FoundedAddress = $response->result[0]->title;
+            $address->Status = 2;
+            $address->save();
+            echo "آدرس پیدا شده :‌ " . $response->result[0]->title;
+        }else{
+            echo "Address Not Valid";
         }
-        while ($response->num < 1) {
-            array_splice($array, -1);
-            $FinalAddress = implode(" ", $array);
-            $response = $this->CallApi($FinalAddress);
-        }
-        $address->FoundedAddress = $response->result[0]->title;
-        $address->Status = 2;
-        $address->save();
-        echo "محل پیدا شده :‌ " . $response->result[0]->title;
-        echo "<br/><br/><br/><br/>";
-        echo $FinalAddress;
-        echo "<br/><br/><br/><br/>";
-        var_dump($response);
     }
 
     public function CallApi($address)
     {
+
         $curl = curl_init();
         $text = urlencode(trim($address));
         curl_setopt_array($curl, array(
@@ -78,21 +71,49 @@ class AddressController extends Controller
 
     public function ValidateArray($address)
     {
-        $first = str_replace("،", " ", $address);
-        $second = str_replace("-", " ", $first);
-        $third = str_replace("(", " ", $second);
-        $Fourth = str_replace(":", " ", $third);
-        $Fifth = str_replace("سلام", " ", $Fourth);
-        $Sixth = str_replace("دفتر", " ", $Fifth);
-        $Seventh = str_replace("مرکزی", " ", $Sixth);
-        $Final = str_replace(")", " ", $Seventh);
-        $array = explode(" ", $Final);
-        return $array;
+        if (strpos($address, "،")) {
+            $address = explode("،", $address);
+            $address = implode(" ", $address);
+        }
+        elseif (strpos($address, "-")) {
+            $address = explode("-", $address);
+            $address = implode(" ", $address);
+        }
+        if (strpos($address, ":")) {
+            $address = strstr($address, ':');
+            $address = str_replace(":", "", $address);
+        }
+        if (strpos($address , ")") ){
+            $start = "(";
+            $end = ")";
+            $replace = " ";
+            $pos1 = strpos($address , $start);
+            $pos2 = strpos($address , $end , $pos1);
+            $lenght = $pos2 + strlen($pos1) - $pos1;
+            $address = substr_replace($address , $replace , $pos1 , $lenght);
+        }
+        if (strpos($address, "واحد")) {
+            $address = substr($address, 0, strpos($address, "واحد"));
+        }
+        if (strpos($address, "طبقه")) {
+            $address = substr($address, 0, strpos($address, "طبقه"));
+        }
+        if (strpos($address, "پلاک")) {
+            $address = substr($address, 0, strpos($address, "پلاک"));
+        }
+        if (strpos($address, "شرکت")) {
+            $address = substr($address, 0, strpos($address, "شرکت"));
+        }
+        if (strpos($address, "ساختمان")) {
+            $address = substr($address, 0, strpos($address, "ساختمان"));
+        }
+       return $address;
     }
 
-    public function GetDataFromSQl(){
+    public function GetDataFromSQl()
+    {
         $All_Count = Address::all()->count();
-        $Founded_Count = Address::where('Status' , 2)->count();
-        return response()->json(array('All_Count'=> $All_Count , 'Founded_Count' => $Founded_Count), 200);
+        $Founded_Count = Address::where('Status', 2)->count();
+        return response()->json(array('All_Count' => $All_Count, 'Founded_Count' => $Founded_Count), 200);
     }
 }
