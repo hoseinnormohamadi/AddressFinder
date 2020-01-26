@@ -32,24 +32,15 @@ class SearchforAddress implements ShouldQueue
     public function check($id)
     {
         $address = Address::find($id);
-        $array = $this->ValidateArray($address->Address);
-        $FinalAddress = implode(" ", $array);
-        $response = $this->CallApi($FinalAddress);
-        while ($response == null) {
-            array_splice($array, -1);
-            $FinalAddress = implode(" ", $array);
-            $response = $this->CallApi($FinalAddress);
-        }
-        while ($response->num < 1) {
-            array_splice($array, -1);
-            $FinalAddress = implode(" ", $array);
-            $response = $this->CallApi($FinalAddress);
-        }
+        $Address = $address->Address;
 
-        $address->FoundedAddress = $response->result[0]->title;
-        $address->Status = 2;
-        $address->save();
-
+        if (strpos($Address, 'خیابان') || strpos($Address, 'خ ') || strpos($Address, "کوچه") || strpos($Address, "ک ") || strpos($Address, 'پلاک ') !== false) {
+            $FinalAddress = $this->ValidateArray($Address);
+            $response = $this->CallApi($FinalAddress);
+            $address->FoundedAddress = $response->result[0]->title;
+            $address->Status = 2;
+            $address->save();
+        }
     }
 
     public function CallApi($address)
@@ -78,16 +69,43 @@ class SearchforAddress implements ShouldQueue
 
     public function ValidateArray($address)
     {
-        $first = str_replace("،", " ", $address);
-        $second = str_replace("-", " ", $first);
-        $third = str_replace("(", " ", $second);
-        $Fourth = str_replace(":", " ", $third);
-        $Fifth = str_replace("سلام", " ", $Fourth);
-        $Sixth = str_replace("دفتر", " ", $Fifth);
-        $Seventh = str_replace("مرکزی", " ", $Sixth);
-        $Final = str_replace(")", " ", $Seventh);
-        $array = explode(" ", $Final);
-        return $array;
+        if (strpos($address, "،")) {
+            $address = explode("،", $address);
+            $address = implode(" ", $address);
+        }
+        elseif (strpos($address, "-")) {
+            $address = explode("-", $address);
+            $address = implode(" ", $address);
+        }
+        if (strpos($address, ":")) {
+            $address = strstr($address, ':');
+            $address = str_replace(":", "", $address);
+        }
+        if (strpos($address , ")") ){
+            $start = "(";
+            $end = ")";
+            $replace = " ";
+            $pos1 = strpos($address , $start);
+            $pos2 = strpos($address , $end , $pos1);
+            $lenght = $pos2 + strlen($pos1) - $pos1;
+            $address = substr_replace($address , $replace , $pos1 , $lenght);
+        }
+        if (strpos($address, "واحد")) {
+            $address = substr($address, 0, strpos($address, "واحد"));
+        }
+        if (strpos($address, "طبقه")) {
+            $address = substr($address, 0, strpos($address, "طبقه"));
+        }
+        if (strpos($address, "پلاک")) {
+            $address = substr($address, 0, strpos($address, "پلاک"));
+        }
+        if (strpos($address, "شرکت")) {
+            $address = substr($address, 0, strpos($address, "شرکت"));
+        }
+        if (strpos($address, "ساختمان")) {
+            $address = substr($address, 0, strpos($address, "ساختمان"));
+        }
+        return $address;
     }
 
 }
