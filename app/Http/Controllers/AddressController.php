@@ -26,37 +26,6 @@ class AddressController extends Controller
         }
     }
 
-    public function check($id)
-    {
-        $address = Address::find($id);
-        $Address = $address->Address;
-        if (strpos($Address, 'خیابان') ||
-            strpos($Address, 'خ ') ||
-            strpos($Address, "کوچه") ||
-            strpos($Address, "ک ") ||
-            strpos($Address, 'پلاک ') ||
-            strpos($Address, "واحد") ||
-            strpos($Address, "ساختمان") !== false) {
-            $FinalAddress = $this->ValidateArray($Address);
-            echo "آدرس جست و جو شده :‌ " . $FinalAddress;
-            echo "<br/><br/><br/><br/><br/>";
-            $response = $this->CallApi($FinalAddress);
-            if ($response->result != null) {
-                $address->FoundedAddress = $response->result[0]->title;
-                $address->Status = 2;
-                $address->save();
-                echo "آدرس پیدا شده :‌ " . $response->result[0]->title;
-            } else {
-                echo "Address not found";
-                $address->FoundedAddress = "Address Not Found";
-                $address->Status = 3;
-                $address->save();
-            }
-        } else {
-            echo "Address Not Valid";
-        }
-    }
-
     public function check_address($id)
     {
         $address = Address::find($id);
