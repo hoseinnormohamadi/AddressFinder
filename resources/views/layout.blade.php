@@ -59,35 +59,7 @@
                 <!-- Begin Navbar Menu -->
                 <ul class="nav-menu list-unstyled d-flex flex-md-row align-items-md-center pull-right">
                     <!-- Begin Notifications -->
-                    @if($notification->isEmpty())
-                        <li class="nav-item dropdown"><a id="notifications" rel="nofollow" data-target="#" href="#"
-                                                         data-toggle="dropdown" aria-haspopup="true"
-                                                         aria-expanded="false" class="nav-link"><i
-                                    class="la la-bell animated infinite swing"></i><span class="badge-pulse"></span></a>
-                            <ul aria-labelledby="notifications" class="dropdown-menu notification">
-                                <li>
-                                    <div class="notifications-header">
-                                        <div class="title">اعلان ها</div>
-                                        <div class="notifications-overlay"></div>
-                                        <img src="/assets/img/notifications/01.jpg" alt="..." class="img-fluid">
-                                    </div>
-                                </li>
-                                <li>
-                                    <a href="/Adresses">
-                                        <div class="message-icon">
-                                            <i class="la la-map-marker"></i>
-                                        </div>
-                                        <div class="message-body">
-                                            <div class="message-body-heading">
-                                                جست و جوی آدرس به اتمام رسید.
-                                            </div>
-                                            <span class="date">هم اکنون</span>
-                                        </div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                @endif
+
                 <!-- End Notifications -->
                     <!-- User -->
                     <li class="nav-item dropdown"><a id="user" rel="nofollow" data-target="#" href="#"

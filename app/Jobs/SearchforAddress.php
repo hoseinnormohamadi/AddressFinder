@@ -15,33 +15,66 @@ class SearchforAddress implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $Address;
+
     public function __construct()
     {
-        $this->Address = Address::where('Status' , 1)->get();
+        $this->Address = Address::where('Status', 1)->get();
 
     }
 
     public function handle()
     {
 
-        foreach ($this->Address as $key){
-            $this->check($key->id);
+        foreach ($this->Address as $key) {
+            $this->check($key);
         }
     }
 
-    public function check($id)
+    public function check($address)
     {
-        $address = Address::find($id);
         $Address = $address->Address;
-
-        if (strpos($Address, 'خیابان') || strpos($Address, 'خ ') || strpos($Address, "کوچه") || strpos($Address, "ک ") || strpos($Address, 'پلاک ') !== false) {
-            $FinalAddress = $this->ValidateArray($Address);
+        if (preg_match('/خیابان/', $Address) > 0 ||
+            preg_match('/کوچه/', $Address) > 0 ||
+            preg_match('/میدان/', $Address) > 0 ||
+            preg_match('/بلوار/', $Address) > 0 ||
+            preg_match('/پلاک/', $Address) > 0 ||
+            preg_match('/بن بست/', $Address) > 0 ||
+            preg_match('/بزرگراه/', $Address) > 0 ||
+            preg_match('/ساختمان/', $Address) > 0 ||
+            preg_match('/\bخ\b/u', $Address) > 0 ||
+            preg_match('/\bک\b/u', $Address) > 0) {
+            $FinalAddress = $this->validateMethod1($Address);
             $response = $this->CallApi($FinalAddress);
-            $address->FoundedAddress = $response->result[0]->title;
-            $address->Status = 2;
-            $address->save();
+            if (!empty($response->result) && $response->result[0]->certainty > 70){
+                $address->FoundedAddress = $response->result[0]->title;
+                $address->Status = 2;
+                $address->save();
+            }else{
+                $FinalAddress = $this->validateMethod2($Address);
+                $response = $this->CallApi($FinalAddress);
+                if (!empty($response->result) && $response->result[0]->certainty > 70){
+                    $address->FoundedAddress = $response->result[0]->title;
+                    $address->Status = 2;
+                    $address->save();
+                }else{
+                    $response = $this->LastTry($Address);
+                    if ($response != null){
+                        $address->FoundedAddress = $response;
+                        $address->Status = 2;
+                        $address->save();
+                    }
+                }
+            }
+        } else {
+            $response = $this->LastTry($Address);
+            if ($response != null){
+                $address->FoundedAddress = $response;
+                $address->Status = 2;
+                $address->save();
+            }
         }
     }
+
 
     public function CallApi($address)
     {
@@ -67,45 +100,91 @@ class SearchforAddress implements ShouldQueue
 
     }
 
-    public function ValidateArray($address)
+    public function ValidateMethod1($address)
     {
-        if (strpos($address, "،")) {
-            $address = explode("،", $address);
-            $address = implode(" ", $address);
+        if (preg_match('/،/', $address) > 0) {
+            $address = preg_replace('/،/', '-', $address);
         }
-        elseif (strpos($address, "-")) {
-            $address = explode("-", $address);
-            $address = implode(" ", $address);
+        $keyWords = array(
+            '/\bخ\b/u' => 'خیابان',
+            '/\bک\b/u' => 'کوچه',
+            '/بن بست/' => 'کوچه',
+            '/نبش/' => 'خیابان',
+            '/جنب/' => 'خیابان',
+            '/نرسیده به/' => 'خیابان',
+            '/بعد از/' => 'خیابان',
+            '/بالاتر از/' => 'خیابان',
+            '/ابتدای/' => 'خیابان',
+            '/\/\d/' => '',
+        );
+        $keys = array(
+            '/^\W.+?\-/',
+            '/خیابان.+?\-/',
+            '/کوچه.+?\-/',
+            '/بلوار.+?\-/',
+            '/بزرگراه.+?\-/',
+            '/فلکه.+?\-/',
+            '/میدان.+?\-/',
+            '/برج.+?\s/',
+            '/ساختمان.+?\s/',
+            '/پمپ بنزین.+?\s/',
+        );
+        $address = preg_replace(array_keys($keyWords), array_values($keyWords), $address);
+        $founded = array();
+        foreach ($keys as $key) {
+            preg_match_all($key, $address, $match);
+            $founded[] = $match[0];
         }
+        $final_address = "";
+        for ($i = 0; $i < count($founded); $i++) {
+            $final_address .= implode("", $founded[$i]);
+        }
+        $final_address = preg_replace('/-/', ' ', $final_address);
+        if (strlen($final_address) > 10) {
+            return $final_address;
+        } else {
+            return false;
+        }
+    }
+
+    public function validateMethod2($address)
+    {
+        $keyWords = array(
+            '/،/' => ' ',
+            '/-/' => ' ',
+            '/\bخ\b/u' => 'خیابان',
+            '/\bک\b/u' => 'کوچه',
+            '/پ\s?\d{1,3}/' => 'پلاک'
+        );
+        $keys = array(
+            'واحد',
+            'طبقه',
+            'پلاک',
+            'شرکت',
+            'ساختمان',
+        );
+        $address = preg_replace(array_keys($keyWords), array_values($keyWords), $address);
         if (strpos($address, ":")) {
             $address = strstr($address, ':');
             $address = str_replace(":", "", $address);
         }
-        if (strpos($address , ")") ){
-            $start = "(";
-            $end = ")";
-            $replace = " ";
-            $pos1 = strpos($address , $start);
-            $pos2 = strpos($address , $end , $pos1);
-            $lenght = $pos2 + strlen($pos1) - $pos1;
-            $address = substr_replace($address , $replace , $pos1 , $lenght);
-        }
-        if (strpos($address, "واحد")) {
-            $address = substr($address, 0, strpos($address, "واحد"));
-        }
-        if (strpos($address, "طبقه")) {
-            $address = substr($address, 0, strpos($address, "طبقه"));
-        }
-        if (strpos($address, "پلاک")) {
-            $address = substr($address, 0, strpos($address, "پلاک"));
-        }
-        if (strpos($address, "شرکت")) {
-            $address = substr($address, 0, strpos($address, "شرکت"));
-        }
-        if (strpos($address, "ساختمان")) {
-            $address = substr($address, 0, strpos($address, "ساختمان"));
+        foreach ($keys as $key) {
+
+            if (strpos($address, $key)) {
+                $address = substr($address, 0, strpos($address, $key));
+            }
         }
         return $address;
+    }
+
+    public function LastTry($Address)
+    {
+        $response = $this->CallApi($Address);
+            if (!empty($response->result)) {
+                return $response->result[0]->title;
+            } else {
+                return null;
+            }
     }
 
 }

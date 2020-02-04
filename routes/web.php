@@ -18,6 +18,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/CreateNewJob','AddressController@StoreAddress');
     Route::get('/Adresses','RouteController@ShowAddresses');
     Route::get('/check/{ID}' , 'AddressController@check');
+    Route::get('/C/{ID}' , 'AddressController@check_address');
 });
 Route::post('/GetDataFromSQl' , 'AddressController@GetDataFromSQl');
 
