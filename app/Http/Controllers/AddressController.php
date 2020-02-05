@@ -30,42 +30,56 @@ class AddressController extends Controller
     {
         $address = Address::find($id);
         $Address = $address->Address;
-        if (preg_match('/خیابان/', $Address) > 0 ||
-            preg_match('/کوچه/', $Address) > 0 ||
-            preg_match('/میدان/', $Address) > 0 ||
-            preg_match('/بلوار/', $Address) > 0 ||
-            preg_match('/پلاک/', $Address) > 0 ||
-            preg_match('/بن بست/', $Address) > 0 ||
-            preg_match('/ساختمان/', $Address) > 0 ||
-            preg_match('/\bخ\b/u', $Address) > 0 ||
-            preg_match('/\bک\b/u', $Address) > 0) {
+        /*
+          $validateAddress = array(
+            '/خیابان/',
+            '/کوچه/',
+            '/میدان/',
+            '/بلوار/',
+            '/پلاک/',
+            '/بن بست/',
+            '/ساختمان/',
+            '/\bخ\b/u',
+            '/\bک\b/u'
+        );
+          foreach ($validateAddress as $key) {
+            $founded = strpos($Address,$key);
+            preg_match_all($key, $Address, $match);
+            $founded[] = $match[0];
+        }*/
+        $validateAddress = array(
+            'خیابان',
+            'کوچه',
+            'میدان',
+            'بلوار',
+            'پلاک',
+            'بن بست',
+            'ساختمان',
+            'بزرگراه',
+            'فلکه',
+            'نرسیده به'
+
+        );
+        if ($this->MultiStrPos($Address, $validateAddress)) {
             echo "آدرس اصلی :‌ " . $Address . "<br/><br/><br/><br/><br/>";
             $Final_Address = $this->validateMethod1($Address);
             $response = $this->CallApi($Final_Address);
-            if (!empty($response->result) && $response->result[0]->certainty > 70){
+            if (!empty($response->result) && $response->result[0]->certainty > 70) {
                 echo "آدرس جست و جو شده : " . $Final_Address . "<br/>";
-                echo "آدرس پیدا شده : ". $response->result[0]->title . "<br/>";
-                echo "درصد درستی آدرس : " .$response->result[0]->certainty ;
-            }else{
-                $FinalAddress = $this->validateMethod2($Address);
-
-                $response = $this->CallApi($FinalAddress);
-                if (!empty($response->result) && $response->result[0]->certainty > 70){
-                    echo "آدرس جست و جو شده : " . $Final_Address . "<br/>";
-                    echo "آدرس پیدا شده : ". $response->result[0]->title . "<br/>";
-                    echo "درصد درستی آدرس : " .$response->result[0]->certainty ;
-                }else{
-                    $response = $this->LastTry($Address);
-                    if ($response != null){
-                        echo "آدرس جست و جو شده : " . $Address . "<br/>";
-                        echo "آدرس پیدا شده : ". $response['title'] . "<br/>";
-                        echo "درصد درستی آدرس : " .$response['certainty'] ;
-                    }else{
-                        echo "Address Invalid After Search";
-                    }
+                echo "آدرس پیدا شده : " . $response->result[0]->title . "<br/>";
+                echo "درصد درستی آدرس : " . $response->result[0]->certainty;
+            } else {
+                $response = $this->LastTry($Address);
+                if ($response != null) {
+                    echo "آدرس جست و جو شده : " . $Address . "<br/>";
+                    echo "آدرس پیدا شده : " . $response['title'] . "<br/>";
+                    echo "درصد درستی آدرس : " . $response['certainty'];
+                } else {
+                    echo "Address Invalid After Search";
                 }
             }
-        }else{
+
+        } else {
             echo "Address Invalid Before Search";
         }
     }
@@ -97,7 +111,6 @@ class AddressController extends Controller
 
     public function validateMethod1($address)
     {
-
         if (preg_match('/،/', $address) > 0) {
             $address = preg_replace('/،/', '-', $address);
         }
@@ -111,34 +124,36 @@ class AddressController extends Controller
             '/بعد از/' => 'خیابان',
             '/بالاتر از/' => 'خیابان',
             '/ابتدای/' => 'خیابان',
+            '/بانک.+?\-/' => 'خیابان',
             '/\/\d/' => '',
-
+            '/\W{0,100}:/' => '',
         );
         $keys = array(
             '/^\W.+?\-/',
-            '/خیابان.+?\-/',
-            '/کوچه.+?\-/',
+            '/میدان.+?\-/',
             '/بلوار.+?\-/',
             '/بزرگراه.+?\-/',
             '/فلکه.+?\-/',
-            '/میدان.+?\-/',
+            '/خیابان.+?\-/',
+            '/کوچه.+?\-/',
+            '/پمپ بنزین.+?\s/',
             '/برج.+?\s/',
             '/ساختمان.+?\s/',
-            '/پمپ بنزین.+?\s/',
         );
         $address = preg_replace(array_keys($keyWords), array_values($keyWords), $address);
         $founded = array();
         foreach ($keys as $key) {
             preg_match_all($key, $address, $match);
-            $founded[] = $match[0];
+            $founded[] = implode("", $match[0]);
         }
-        $final_address = "";
-        for ($i = 0; $i < count($founded); $i++) {
-            $final_address .= implode("", $founded[$i]);
-        }
+        $final_address = implode("", $founded);
+        $final_address = preg_replace('/خیابان کوچه/', 'کوچه', $final_address);
+        $final_address = preg_replace('/خیابان خیابان/', 'خیابان', $final_address);
 
         $final_address = preg_replace('/-/', ' ', $final_address);
+        $final_address = preg_replace('/\(.*?\)/', '', $final_address);
         if (strlen($final_address) > 10) {
+            dd($final_address);
             return $final_address;
         } else {
             return false;
@@ -146,74 +161,31 @@ class AddressController extends Controller
 
     }
 
-    public function ValidateMethod2($address)
+
+    public function MultiStrPos($haystack, $needles = array())
     {
-        $keyWords = array(
-            '/،/' => ' ',
-            '/-/' => ' ',
-            '/\bخ\b/u' => 'خیابان',
-            '/\bک\b/u' => 'کوچه',
-            '/پ\s?\d{1,3}/' => 'پلاک'
-        );
-        $keys = array(
-            'واحد',
-            'طبقه',
-            'پلاک',
-            'شرکت',
-            'ساختمان',
-        );
-        $address = preg_replace(array_keys($keyWords), array_values($keyWords), $address);
-        if (strpos($address, ":")) {
-            $address = strstr($address, ':');
-            $address = str_replace(":", "", $address);
+        $chr = array();
+        foreach ($needles as $needle) {
+            $res = strpos($haystack, $needle);
+            if ($res !== false) $chr[$needle] = $res;
         }
-
-        foreach ($keys as $key) {
-
-            if (strpos($address, $key)) {
-                $address = substr($address, 0, strpos($address, $key));
-            }
-        }
-        return $address;
-    }
-
-    public function SearchMethod2($Address, $certainty)
-    {
-        $FinalAddress = $this->validateMethod2($Address);
-        $response = $this->CallApi($FinalAddress);
-        if ($response != null) {
-            if (!empty($response->result)) {
-
-
-                if ($response->result[0]->certainty > $certainty) {
-                    $result = array(
-                        'Final_Address' => $FinalAddress,
-                        'Fonded_Address' => $response->result[0]->title,
-                        'certainty' => $response->result[0]->certainty
-                    );
-                    return $result;
-                }
-                return false;
-
-            }
+        if (empty($chr))
             return false;
-        }
-        return false;
+        return ($chr);
     }
 
     public function LastTry($Address)
     {
         $response = $this->CallApi($Address);
-            if (!empty($response->result)) {
-                return array(
-                    'title' => $response->result[0]->title,
-                    'certainty' => $response->result[0]->certainty
-                );
-            } else {
-                return null;
-            }
+        if (!empty($response->result)) {
+            return array(
+                'title' => $response->result[0]->title,
+                'certainty' => $response->result[0]->certainty
+            );
+        } else {
+            return null;
+        }
     }
-
 
     public function GetDataFromSQl()
     {

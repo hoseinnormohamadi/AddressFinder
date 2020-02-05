@@ -1,6 +1,6 @@
 @extends('layout')
 @section('content')
-    <meta name="_token" content="{{csrf_token()}}" />
+    <meta name="_token" content="{{csrf_token()}}"/>
     <div class="widget has-shadow">
         <div class="widget-header bordered no-actions d-flex align-items-center">
             <h4>آدرس ها</h4>
@@ -72,19 +72,22 @@
             jQuery.ajax({
                 url: "/GetDataFromSQl",
                 method: 'post',
-                success: function(result){
+                success: function (result) {
                     console.log(result);
                     var Founded_Count = result['Founded_Count'];
                     var All_Count = result['All_Count'];
                     var Darsad = 100 / All_Count;
                     var ProgressBarWidth = Founded_Count * Darsad;
-                    document.getElementById('ProgressBar').style.width =ProgressBarWidth+ "%";
-                    document.getElementById('AllAddress').innerHTML =  "تعداد کل آدرس ها :‌ " + All_Count;
-                    document.getElementById('founded').innerHTML =  "تعداد پیدا شده ها :‌ " + Founded_Count;
-                    document.getElementById('notfound').innerHTML =  "تعداد پیدا نشده ها :‌ " + (All_Count - Founded_Count);
-                }});
+                    document.getElementById('ProgressBar').style.width = ProgressBarWidth + "%";
+                    document.getElementById('AllAddress').innerHTML = "تعداد کل آدرس ها :‌ " + All_Count;
+                    document.getElementById('founded').innerHTML = "تعداد پیدا شده ها :‌ " + Founded_Count;
+                    document.getElementById('notfound').innerHTML = "تعداد پیدا نشده ها :‌ " + (All_Count - Founded_Count);
+                }
+            });
 
         }
+
         setInterval(ChangeProgressBar, 100);
+        setInterval(ChangeAddress, 100);
     </script>
 @endsection
