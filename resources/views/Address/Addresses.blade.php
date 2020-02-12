@@ -15,7 +15,9 @@
                     <p id="AllAddress">تعداد کل آدرس ها :‌ </p>
                     <p id="founded">تعداد پیدا شده ها :‌ </p>
                     <p id="notfound">تعداد پیدا نشده ها :‌ </p>
+                    <a class="btn btn-success" href="/StartSearch">  جست و جو </a>
                 </div>
+                <br>
                 <table class="table mb-0">
                     <thead>
                     <tr>

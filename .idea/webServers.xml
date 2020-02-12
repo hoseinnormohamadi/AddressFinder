@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="809214b8-3a6b-4df5-8fad-9f5adb09be87" name="Amatis" url="http://ftp.amatisrepo.ir">
+        <fileTransfer host="ftp.amatisrepo.ir" port="21" rootFolder="/public_html/Amatis_EDU">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="21" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

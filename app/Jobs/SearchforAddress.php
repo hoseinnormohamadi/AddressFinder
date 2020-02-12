@@ -13,57 +13,61 @@ use Illuminate\Queue\SerializesModels;
 class SearchforAddress implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
     public $Address;
-
-    public function __construct()
+    public function __construct($Address)
     {
-        $this->Address = Address::where('Status', 1)->get();
-
+        $this->Address = $Address;
     }
-
     public function handle()
     {
-
-        foreach ($this->Address as $key) {
-            $this->check($key);
-        }
+            $this->check($this->Address);
     }
-
     public function check($address)
     {
         $Address = $address->Address;
-        $validateAddress = array(
-            'خیابان',
-            'کوچه',
-            'میدان',
-            'بلوار',
-            'پلاک',
-            'بن بست',
-            'ساختمان',
-            'بزرگراه',
-            'فلکه',
-            'نرسیده به'
+        $keyWords = array(
+            '/خیابان/',
+            '/کوچه/',
+            '/میدان/',
+            '/بلوار/',
+            '/پلاک/',
+            '/ساختمان/',
+            '/بزرگراه/',
+            '/فلکه/',
+            '/دانشکده/',
+            '/\bخ\b/u',
+            '/\bک\b/u',
+            '/نبش/',
+            '/جنب/',
+            '/بن بست/',
+            '/نرسیده به/',
+            '/بعد از/',
+            '/بالاتر از/',
+            '/پ\d{1,4}/',
         );
-        if ($this->MultiStrPos($Address, $validateAddress)) {
+        $Valideted = 0;
+        foreach ($keyWords as $key) {
+            $Valideted .= preg_match($key, $Address);
+        }
+        if ($Valideted > 0) {
             $FinalAddress = $this->validateAddress($Address);
             $response = $this->CallApi($FinalAddress);
-            if (!empty($response->result) && $response->result[0]->certainty > 70){
+            if (!empty($response->result) && $response->result[0]->certainty >= 70) {
                 $address->FoundedAddress = $response->result[0]->title;
                 $address->Status = 2;
                 $address->save();
-            }else{
-                    $response = $this->LastTry($Address);
-                    if ($response != null){
-                        $address->FoundedAddress = $response;
-                        $address->Status = 2;
-                        $address->save();
-                    }
+            } else {
+                $response = $this->LastTry($Address);
+                if ($response != null) {
+                    $address->FoundedAddress = $response;
+                    $address->Status = 2;
+                    $address->save();
                 }
+            }
 
-        } else {
+        }else {
             $response = $this->LastTry($Address);
-            if ($response != null){
+            if ($response != null) {
                 $address->FoundedAddress = $response;
                 $address->Status = 2;
                 $address->save();
@@ -98,29 +102,48 @@ class SearchforAddress implements ShouldQueue
         if (preg_match('/،/', $address) > 0) {
             $address = preg_replace('/،/', '-', $address);
         }
+        if (preg_match('/:\w/', $address) > 0) {
+            preg_match_all('/:.*/', $address, $addres);
+            $address = $addres[0][0];
+        }
         $keyWords = array(
             '/\bخ\b/u' => 'خیابان',
             '/\bک\b/u' => 'کوچه',
             '/نبش/' => 'خیابان',
             '/جنب/' => 'خیابان',
             '/بن بست/' => 'کوچه',
+            '/بین/' => 'خیابان',
             '/نرسیده به/' => 'خیابان',
             '/بعد از/' => 'خیابان',
             '/بالاتر از/' => 'خیابان',
             '/ابتدای/' => 'خیابان',
+            '/بانک.+?\-/' => 'خیابان',
             '/\/\d/' => '',
+            '/\W{0,100}:/' => '',
+            '/\n/' => '',
+            '/\(.*?\)/' => '',
+            '/الله/u' => '',
+
         );
         $keys = array(
             '/^\W.+?\-/',
-            '/خیابان.+?\-/',
-            '/کوچه.+?\-/',
+            '/میدان.+?\-/',
             '/بلوار.+?\-/',
             '/بزرگراه.+?\-/',
             '/فلکه.+?\-/',
-            '/میدان.+?\-/',
+            '/خیابان.+?\-/',
+            '/کوچه.+?\-/',
+            '/پمپ بنزین.+?\s/',
             '/برج.+?\s/',
             '/ساختمان.+?\s/',
-            '/پمپ بنزین.+?\s/',
+        );
+        $replace = array(
+            '/خیابان کوچه/' => 'کوچه',
+            '/خیابان خیابان/' => 'خیابان',
+            '/خیابانساختمان/' => 'ساختمان',
+            '/خیابن/' => 'خیابان',
+            '/خیابان بزرگراه/' => 'بزرگراه',
+            '/خیابان ایستگاه/' => 'ایستگاه'
         );
         $address = preg_replace(array_keys($keyWords), array_values($keyWords), $address);
         $founded = array();
@@ -129,35 +152,25 @@ class SearchforAddress implements ShouldQueue
             $founded[] = implode("", $match[0]);
         }
         $final_address = implode("", $founded);
-        $final_address = preg_replace('/-/', ' ', $final_address);
-        $final_address = preg_replace('/\(.*?\)/' , '' , $final_address);
+        $final_address = preg_replace(array_keys($replace), array_values($replace), $final_address);
+        $exp = explode('-', $final_address);
+        $arr = array_unique($exp);
+        $final_address = implode(' ', $arr);
         if (strlen($final_address) > 10) {
-            if ($founded[0] != null)
-            $final_address =preg_replace('/^'.$founded[0].'?/','',$final_address);
             return $final_address;
         } else {
             return false;
         }
-
-    }
-    public function MultiStrPos($haystack, $needles=array()) {
-        $chr = array();
-        foreach($needles as $needle) {
-            $res = strpos($haystack, $needle);
-            if ($res !== false) $chr[$needle] = $res;
-        }
-        if(empty($chr))
-            return false;
-        return ($chr);
     }
     public function LastTry($Address)
     {
+        if (strpos($Address, 'پلاک'))
+            $Address = substr($Address, 0, strpos($Address, "پلاک"));
         $response = $this->CallApi($Address);
-            if (!empty($response->result)) {
-                return $response->result[0]->title;
-            } else {
-                return null;
-            }
+        if (!empty($response->result) && $response->result[0]->certainty >= 50) {
+            return $response->result[0]->title;
+        } else {
+            return null;
+        }
     }
-
 }
